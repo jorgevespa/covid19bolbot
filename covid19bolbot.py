@@ -93,7 +93,7 @@ def responder(update, context):
 def error(update, context):
     """Log Errors caused by Updates."""
     #logger.warning('Update "%s" caused error "%s"', update, context.error)
-    update.message.reply_text("Debes escribir el nombre del departamento sin espacios, del cual quieres obtener los datos.", parse_mode=ParseMode.HTML)
+    update.message.reply_text("Debes escribir el nombre del departamento, del cual quieres obtener los datos o Bolivia para ver el resumen en total.", parse_mode=ParseMode.HTML)
 
 
 def main():
