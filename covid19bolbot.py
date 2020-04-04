@@ -17,6 +17,7 @@ import configparser
 import logging
 import os
 import time
+from PIL import Image, ImageDraw, ImageFont
 
 from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
@@ -59,11 +60,80 @@ def datos_ciudad(ciudad):
 		
 	if (ciudad=="bolivia"):
 		return ("bolivia")
+		
+	if (ciudad=="mapa"):
+		return ("mapa")
 
 def obtener_datos(ciudad):
 	url=urllib.request.urlopen("https://www.boliviasegura.gob.bo/wp-content/json/api.php")
 	dato=url.read()
 	resultado=json.loads(dato.decode("utf-8"))
+	if (ciudad=="mapa"):
+	    imagen = Image.open('mapa.png')
+	    dibujo = ImageDraw.Draw(imagen)
+	    fuente = ImageFont.truetype('FreeMonoBold.ttf', size=20)
+	    
+	    valor=resultado["departamento"]["pn"]["contador"]["confirmados"]
+	    (x, y) = (131, 51)
+	    color = 'rgb(237, 28, 36)'
+	    dibujo.text((x, y), str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["departamento"]["sc"]["contador"]["confirmados"]
+	    (x, y) = (317, 259)
+	    dibujo.text((x, y), str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["departamento"]["lp"]["contador"]["confirmados"]
+	    (x, y) = (95, 192)
+	    dibujo.text((x, y), str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["departamento"]["cb"]["contador"]["confirmados"]
+	    (x, y) = (167, 267)
+	    dibujo.text((x, y), str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["departamento"]["or"]["contador"]["confirmados"]
+	    (x, y) = (105, 321)
+	    dibujo.text((x, y), str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["departamento"]["pt"]["contador"]["confirmados"]
+	    (x, y) = (132, 390)
+	    dibujo.text((x, y), str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["departamento"]["tj"]["contador"]["confirmados"]
+	    (x, y) = (227, 440)
+	    dibujo.text((x, y), str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["departamento"]["ch"]["contador"]["confirmados"]
+	    (x, y) = (237, 397)
+	    dibujo.text((x, y), str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["departamento"]["bn"]["contador"]["confirmados"]
+	    (x, y) = (193, 125)
+	    dibujo.text((x, y), str(valor), fill=color, font=fuente)
+	     
+	    valor=resultado["contador"]["confirmados"]
+	    (x, y) = (225, 10)
+	    dibujo.text((x, y), "Total Confirmados :"+str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["contador"]["decesos"]
+	    (x, y) = (225, 30)
+	    dibujo.text((x, y), "Total Muertos     :"+str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["contador"]["recuperados"]
+	    (x, y) = (225, 50)
+	    dibujo.text((x, y), "Total Recuperados :"+str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["contador"]["sospechosos"]
+	    (x, y) = (225, 70)
+	    dibujo.text((x, y), "Total Sospechosos :"+str(valor), fill=color, font=fuente)
+	    
+	    valor=resultado["fecha"]
+	    (x, y) = (20, 510)
+	    dibujo.text((x, y), "Actualizado:"+str(valor), fill=color, font=fuente)
+	    
+	    imagen.save('mapa_temporal.png')
+	    
+	    return ("mapa")
+
 	if (ciudad=="bolivia"):
 	    confirmados=resultado["contador"]["confirmados"]
 	    muertos=resultado["contador"]["decesos"]
@@ -87,13 +157,18 @@ def responder(update, context):
     minuscula=(minuscula.lower())
     minuscula=''.join(minuscula.split())
     ciudad=datos_ciudad(minuscula)
-    update.message.reply_text(obtener_datos(ciudad), parse_mode=ParseMode.HTML)
+    if (ciudad=="mapa"):
+	    obtener_datos(ciudad)
+	    context.bot.send_photo(chat_id=update.effective_chat.id, photo=open('mapa_temporal.png','rb'))
+    else:
+	    update.message.reply_text(obtener_datos(ciudad), parse_mode=ParseMode.HTML)
+    print('Se respndio con Exito: '+ciudad)
 
 
 def error(update, context):
     """Log Errors caused by Updates."""
     #logger.warning('Update "%s" caused error "%s"', update, context.error)
-    update.message.reply_text("Debes escribir el nombre del departamento, del cual quieres obtener los datos o Bolivia para ver el resumen en total.", parse_mode=ParseMode.HTML)
+    update.message.reply_text("Debes escribir el nombre del departamento sin espacios, del cual quieres obtener los datos.", parse_mode=ParseMode.HTML)
 
 
 def main():
