@@ -1,4 +1,4 @@
-Bot de Telegram que informa de la situacion oficial del COVID-19 en Bolivia, ya sea por departamentos o en su Globalidad.
+Bot de Telegram que informa de la situacion oficial del COVID-19 en Bolivia, ya sea por departamentos o en su Globalidad. Tambien agregado el soporte para mostrar un mapa.
 
 Se utiliza las librerias de:
 https://python-telegram-bot.org/
