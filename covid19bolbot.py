@@ -167,7 +167,7 @@ def responder(update, context):
     print('Se respondio con Exito, Comando: '+ciudad+"   Usuario:"+usuario.first_name+" "+usuario.last_name)
 
 
-def error(update, context, location):
+def error(update, context):
     """Log Errors caused by Updates."""
     #logger.warning('Update "%s" caused error "%s"', update, context.error)
     update.message.reply_text("Debes escribir el nombre del departamento sin espacios, del cual quieres obtener los datos.", parse_mode=ParseMode.HTML)
