@@ -18,10 +18,11 @@ import logging
 import os
 import time
 from PIL import Image, ImageDraw, ImageFont
+from bs4 import BeautifulSoup
 
 from telegram import ParseMode
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-import urllib.request, json
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
+import urllib.request, json, requests
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -157,18 +158,33 @@ def responder(update, context):
     minuscula=(minuscula.lower())
     minuscula=''.join(minuscula.split())
     ciudad=datos_ciudad(minuscula)
+    usuario = update.message.from_user
     if (ciudad=="mapa"):
 	    obtener_datos(ciudad)
 	    context.bot.send_photo(chat_id=update.effective_chat.id, photo=open('mapa_temporal.png','rb'))
     else:
 	    update.message.reply_text(obtener_datos(ciudad), parse_mode=ParseMode.HTML)
-    print('Se respndio con Exito: '+ciudad)
+    print('Se respondio con Exito, Comando: '+ciudad+"   Usuario:"+usuario.first_name+" "+usuario.last_name)
 
 
-def error(update, context):
+def error(update, context, location):
     """Log Errors caused by Updates."""
     #logger.warning('Update "%s" caused error "%s"', update, context.error)
     update.message.reply_text("Debes escribir el nombre del departamento sin espacios, del cual quieres obtener los datos.", parse_mode=ParseMode.HTML)
+    
+def resultado_pais(update, context):
+    url=urllib.request.urlopen("https://pomber.github.io/covid19/timeseries.json")
+    dato=url.read()
+    resultado=json.loads(dato.decode("utf-8"))
+    pais=context.args[0].capitalize()
+    fecha=resultado[pais][-1]["date"]
+    confirmados=resultado[pais][-1]["confirmed"]
+    muertos=resultado[pais][-1]["deaths"]
+    recuperados=resultado[pais][-1]["recovered"]
+    mensaje="Actualizado: "+fecha+"\n\n<b>Confirmados:          </b>"+str(confirmados)+"🤒\n"+"<b>Muertos:                    </b>"+str(muertos)+"😵\n"+"<b>Recuperados:           </b>"+str(recuperados)+"😷\n"
+    update.message.reply_text(mensaje, parse_mode=ParseMode.HTML)
+    usuario = update.message.from_user
+    print('Se respondio con Exito, Pais: '+pais+"   Usuario:"+usuario.first_name+" "+usuario.last_name)
 
 
 def main():
@@ -180,11 +196,14 @@ def main():
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
+    
 
     # on different commands - answer in Telegram
-
+    dp.add_handler(CommandHandler("pais", resultado_pais))
+    
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, responder))
+
 
     # log all errors
     dp.add_error_handler(error)
