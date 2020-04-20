@@ -13,12 +13,14 @@ Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
 
-import configparser
+import configparser, argparse
 import logging
 import os
-import time
+import datetime
 from PIL import Image, ImageDraw, ImageFont
-from bs4 import BeautifulSoup
+from webscreenshot.webscreenshot import *
+from gtts import gTTS
+#from selenium import webdriver
 
 from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
@@ -164,19 +166,25 @@ def responder(update, context):
 	    context.bot.send_photo(chat_id=update.effective_chat.id, photo=open('mapa_temporal.png','rb'))
     else:
 	    update.message.reply_text(obtener_datos(ciudad), parse_mode=ParseMode.HTML)
-    print('Se respondio con Exito, Comando: '+ciudad+"   Usuario:"+usuario.first_name+" "+usuario.last_name)
+    ahora = datetime.datetime.now()
+    print(str(ahora.strftime("%Y-%m-%d %H:%M:%S"))+' Se respondio con Exito, Comando: '+ciudad+"   Usuario:"+usuario.first_name+" "+usuario.last_name)
 
 
 def error(update, context):
+    update.message.reply_text("Lista de comandos/palabras soportadas: \n Bolivia \n Mapa \n Santa cruz \n Cochabamba \n Oruro \n Potosi \n Sucre \n Beni \n Pando \n Chquisaca \n La Paz \n /pais NombreDelPais ", parse_mode=ParseMode.HTML)
     """Log Errors caused by Updates."""
     #logger.warning('Update "%s" caused error "%s"', update, context.error)
-    update.message.reply_text("Debes escribir el nombre del departamento sin espacios, del cual quieres obtener los datos.", parse_mode=ParseMode.HTML)
     
 def resultado_pais(update, context):
     url=urllib.request.urlopen("https://pomber.github.io/covid19/timeseries.json")
     dato=url.read()
     resultado=json.loads(dato.decode("utf-8"))
     pais=context.args[0].capitalize()
+    opcion=str(context.args[1])
+    if (opcion!="audio"):
+	    opcion=opcion.capitalize();
+	    pais=pais+" "+opcion
+	    
     fecha=resultado[pais][-1]["date"]
     confirmados=resultado[pais][-1]["confirmed"]
     muertos=resultado[pais][-1]["deaths"]
@@ -185,6 +193,31 @@ def resultado_pais(update, context):
     update.message.reply_text(mensaje, parse_mode=ParseMode.HTML)
     usuario = update.message.from_user
     print('Se respondio con Exito, Pais: '+pais+"   Usuario:"+usuario.first_name+" "+usuario.last_name)
+    
+    if (opcion == "audio"):
+	    texto = 'Cantidad de casos confirmados '+str(confirmados)+' Cantidad de Muertos '+str(muertos)+' Cantidad de Recuperados '+str(recuperados)
+	    idioma = 'es'
+	    temp = gTTS(text=texto, lang=idioma, slow=False) 
+	    temp.save("audio_temporal.mp3")
+	    context.bot.send_voice(chat_id=update.effective_chat.id, voice=open('audio_temporal.mp3', 'rb'))
+	    print('Se envio Audio')
+	    
+def resultado_titulares(update, context):
+    # url list to screenshot
+    url_list = ['https://www.boliviasegura.gob.bo/ultimas-noticias']
+
+    # defining options manually
+    options = argparse.Namespace(URL=None, ajax_max_timeouts='1400,1800', cookie=None, crop=None, format='png', header=None, http_password=None, http_username=None, imagemagick_binary=None, input_file=None, label=True, label_bg_color='NavajoWhite', label_size=60, log_level='DEBUG', multiprotocol=False, no_xserver=False, output_directory='/home/pi/covid19bolbot', port=None, proxy=None, proxy_auth=None, proxy_type=None, quality=75, renderer='phantomjs', renderer_binary=None, ssl=False, timeout=30, verbosity=2, window_size='1920,1080', workers=4)
+
+    # actually launching the function
+    take_screenshot(url_list, options)
+
+    img = Image.open("https_www.boliviasegura.gob.bo_ultimas-noticias.png")
+    area = (200, 100, 1720, 1070)
+    cropped_img = img.crop(area)
+
+    cropped_img.save("cortada.png")
+    context.bot.send_photo(chat_id=update.effective_chat.id, photo=open('cortada.png','rb'))
 
 
 def main():
@@ -192,7 +225,7 @@ def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater("TOKEN", use_context=True)
+    updater = Updater("1120222946:AAGWMHDgPjthJg81BMCWocDhSJOMCOsBCFI", use_context=True)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -200,6 +233,7 @@ def main():
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("pais", resultado_pais))
+    dp.add_handler(CommandHandler("titulares", resultado_titulares))
     
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, responder))
