@@ -68,7 +68,7 @@ def datos_ciudad(ciudad):
 		return ("mapa")
 
 def obtener_datos(ciudad):
-	url=urllib.request.urlopen("https://www.boliviasegura.gob.bo/wp-content/json/api.php")
+	url=urllib.request.urlopen("https://boliviasegura.agetic.gob.bo/wp-content/json/api.php")
 	dato=url.read()
 	resultado=json.loads(dato.decode("utf-8"))
 	if (ciudad=="mapa"):
